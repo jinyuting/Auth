@@ -19,7 +19,6 @@ type LoginRequest struct {
     UserId   string `json:"user_id"`
     Email    string `json:"email"`
     Password string `json:"password"`
-    Token    string `json:"token"`
 }
 
 type LoginResponse struct {
@@ -27,9 +26,35 @@ type LoginResponse struct {
     Email  string `json:"email"`
 }
 
+func (s *Server) Login(req *LoginRequest) (*LoginResponse, error) {
+    if req == nil || req.UserId == "" || req.Password == "" {
+        return nil, errors.New("Invalid id and password login request")
+    }
+    user, err := s.Storage.GetUser(req.UserId)
+    if err != nil {
+        log.Print(err)
+        return nil, err
+    }
+    if user == nil || user.Status == USER_STATUS_DELETED || user.Password != req.Password {
+        return nil, errors.New("Invalid user or password")
+    }
+    if user.Status == USER_STATUS_NOT_VERIFY {
+        return nil, errors.New("The user is not verified")
+    }
+    if user.Status == USER_STATUS_LOCKED {
+        return nil, errors.New("The user is locked")
+    }
+    if err = s.Storage.BindUserToOpenUDID(user.Id, req.OpenUDID); err != nil {
+        log.Printf("bind userId to openUDID failed. userId=%s, openUDID=%s, err= %s", user.Id, req.OpenUDID, err)
+        return nil, err
+    }
+
+    return &LoginResponse{UserId:user.Id, Email:user.Email}, nil
+}
+
 func (s *Server) EmailLogin(req *LoginRequest) (*LoginResponse, error) {
     if req == nil || req.Email == "" || req.Password == "" {
-        return nil, errors.New("Invalid email login request")
+        return nil, errors.New("Invalid email and password login request")
     }
     user, err := s.Storage.GetUserByEmail(req.Email)
     if err != nil {
@@ -59,6 +84,8 @@ type LogoutRequest struct {
 }
 
 func (s *Server) Logout(req *LogoutRequest) error {
-    // TODO anything else?
+    if req == nil || len(req.OpenUDID) == 0 || len(req.UserId) == 0 {
+        return errors.New("Invalid logout request")
+    }
     return s.Storage.UnBindUserToOpenUDID(req.UserId, req.OpenUDID)
 }

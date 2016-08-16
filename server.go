@@ -16,7 +16,7 @@ type ServerConfig struct {
 
 type EmailTemplate struct {
     Subject string
-    Body    string
+    Body    string // e.g.: http://localhost:8080/v1/user/verify-email/%s
     Source  string
 }
 

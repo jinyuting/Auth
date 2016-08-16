@@ -1,7 +1,6 @@
 package auth
 
 import (
-    "sproject/infra/timeUtil"
     "errors"
 )
 
@@ -13,7 +12,7 @@ func (s *Server) SendResetPasswordEmail(emailAddress string) error {
     if user == nil {
         return errors.New("User with this email does not exist!")
     }
-    token, err := s.Storage.NewToken(TOKEN_TYPE_RESET_PASSWORD, timeUtil.HOUR, user.Id)
+    token, err := s.Storage.NewToken(TOKEN_TYPE_RESET_PASSWORD, s.Config.TokenExpire, user.Id)
     if err != nil {
         return errors.New("failed to generate a new token")
     }

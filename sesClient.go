@@ -8,7 +8,6 @@ import (
     "fmt"
     "errors"
     "log"
-    "sproject/infra/typeUtil"
 )
 
 type Email struct {
@@ -48,22 +47,22 @@ func SendEmail(token, emailAddress string, template EmailTemplate, client SESCli
         Destination: &Destination{ToAddresses:[]*string{&emailAddress}},
         Message: &Message{
             Subject:&Content{
-                Charset:typeUtil.String(DEFAULT_CHAR_SET),
-                Data:typeUtil.String(template.Subject),
+                Charset:String(DEFAULT_CHAR_SET),
+                Data:String(template.Subject),
             },
             Body:&Body{
                 Html: &Content{
-                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
-                    Data:typeUtil.String(fmt.Sprintf(template.Body, token, token)),
+                    Charset:String(DEFAULT_CHAR_SET),
+                    Data:String(fmt.Sprintf(template.Body, token, token)),
                 },
                 // Ignore the text part
                 Text: &Content{
-                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
-                    Data:typeUtil.String(""),
+                    Charset:String(DEFAULT_CHAR_SET),
+                    Data:String(""),
                 },
             },
         },
-        Source: typeUtil.String(template.Source),
+        Source: String(template.Source),
     }
     return doSendEmail(email, client)
 }

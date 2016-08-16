@@ -3,9 +3,8 @@ package auth
 import (
     "net/mail"
     "log"
-    "github.com/go-errors/errors"
-    "sproject/infra/timeUtil"
     "time"
+    "errors"
 )
 
 const DEFAULT_CHAR_SET = "UTF-8"
@@ -52,7 +51,7 @@ func (s *Server) SendVerificationEmail(email string) error {
         return err
     }
 
-    token, err := s.Storage.NewToken(TOKEN_TYPE_VERIFY_EMAIL, timeUtil.HOUR, user.Id)
+    token, err := s.Storage.NewToken(TOKEN_TYPE_VERIFY_EMAIL, s.Config.TokenExpire, user.Id)
     if err != nil || len(token) == 0 {
         return errors.New("failed to generate a new token")
     }

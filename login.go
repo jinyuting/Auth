@@ -1,8 +1,8 @@
 package auth
 
 import (
-    "github.com/go-errors/errors"
     "log"
+    "errors"
 )
 
 type UserStatus int

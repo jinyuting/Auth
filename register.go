@@ -5,11 +5,12 @@ import (
     "log"
     "github.com/go-errors/errors"
     "sproject/infra/timeUtil"
-    "github.com/astaxie/beego"
-    "sproject/infra/notification"
     "sproject/infra/typeUtil"
     "fmt"
+    "time"
 )
+
+const DEFAULT_CHAR_SET = "UTF-8"
 
 type EmailRegisterRequest struct {
     OpenUDID string `json:"open_udid"`
@@ -45,50 +46,69 @@ func (s *Server) RegisterByEmail(req *EmailRegisterRequest) error {
     if err != nil {
         return err
     }
-    return s.MailBox.SendRegisterVerification(user)
+    return s.SendVerificationEmail(user.Email)
 }
 
-func SendVerificationEmail(email string) error {
-    user, err := cbGetUserByEmail(email)
+func (s *Server) SendVerificationEmail(email string) error {
+    user, err := s.Storage.GetUserByEmail(email)
     if err != nil {
         return err
     }
-    b, err := json.Marshal(&EmailVerification{
-        Email:      email,
-        CreateTime: timeUtil.CurrentTime(),
-    })
-    token, err := cbNewToken(models.TOKEN_TYPE_VERIFY_EMAIL, timeUtil.HOUR, user.Id, string(b))
-    if err != nil {
+
+    token, err := s.Storage.NewToken(TOKEN_TYPE_VERIFY_EMAIL, timeUtil.HOUR, user.Id)
+    if err != nil || len(token) == 0 {
         return errors.New("failed to generate a new token")
     }
-    verifyUrl := beego.AppConfig.String("email_verification_path") + token
-    body := `<html>
-        <body>
-            <b>Please click the following link to verify your email:</b>
-            <br>
-            <a href="%s">%s</a>
-        </body>
-    </html>`
-
-    verifyEmail := &notification.Email{
-        Destination: &notification.Destination{ToAddresses:[]*string{&email}},
-        Message: &notification.Message{
-            Subject:&notification.Content{
-                Charset:typeUtil.String("UTF-8"),
-                Data:typeUtil.String("Anker User Email Verification"),
+    template := s.Config.VerificationEmailTemplate
+    verifyEmail := &Email{
+        Destination: &Destination{ToAddresses:[]*string{&user.Email}},
+        Message: &Message{
+            Subject:&Content{
+                Charset:typeUtil.String(DEFAULT_CHAR_SET),
+                Data:typeUtil.String(template.Subject),
             },
-            Body:&notification.Body{
-                Html: &notification.Content{
-                    Charset:typeUtil.String("UTF-8"),
-                    Data:typeUtil.String(fmt.Sprintf(body, verifyUrl, verifyUrl)),
+            Body:&Body{
+                Html: &Content{
+                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
+                    Data:typeUtil.String(fmt.Sprintf(template.Body, token, token)),
                 },
-                Text: &notification.Content{
-                    Charset:typeUtil.String("UTF-8"),
-                    Data:typeUtil.String(token),
+                // Ignore the text part
+                Text: &Content{
+                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
+                    Data:typeUtil.String(""),
                 },
             },
         },
-        Source: typeUtil.String(EMAIL_DEFAULT_SOURCE),
+        Source: typeUtil.String(template.Source),
     }
-    return cbSendEmail(verifyEmail)
+    client, err := s.CreateSESClient()
+    if err != nil {
+        return err
+    }
+    return SendEmail(verifyEmail, client)
+}
+
+func (s *Server) VerifyEmailAddress(token string) error {
+    tokenObject, err := s.Storage.GetToken(token)
+    // Each token can only be used once
+    defer s.Storage.ExpireToken(token)
+    if err != nil || tokenObject == nil {
+        return errors.New("Invalid token")
+    }
+    if tokenObject.Type != TOKEN_TYPE_VERIFY_EMAIL {
+        return errors.New("token type is invalid")
+    }
+    if tokenObject.ExpiredAt <= time.Now().Unix() {
+        return errors.New("The token is expired.")
+    }
+    // check user
+    user, err := s.Storage.GetUser(tokenObject.UserId)
+    if err != nil {
+        return err
+    }
+    if user == nil {
+        return errors.New("User not exists!")
+    }
+    user.Status = USER_STATUS_NORMAL
+    return s.Storage.UpdateUser(user)
 }

@@ -3,18 +3,25 @@ package auth
 type Server struct {
     // The database model operation
     Storage Storage
-    MailBox MailBox
     Config  ServerConfig
 }
 
 type ServerConfig struct {
-    // TODO
+    SES_ACCESS_KEY            string
+    SES_SECRET_KEY            string
+    SES_REGION                string
+    VerificationEmailTemplate VerificationEmailTemplate
 }
 
-func NewServer(storage Storage, mailBox MailBox, config ServerConfig) Server {
+type VerificationEmailTemplate struct {
+    Subject string
+    Body    string
+    Source  string
+}
+
+func NewServer(storage Storage, config ServerConfig) Server {
     return Server{
         Storage: storage,
-        MailBox: mailBox,
         Config:  config,
     }
 }

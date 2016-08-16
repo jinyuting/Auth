@@ -5,15 +5,12 @@ import (
     "log"
     "github.com/go-errors/errors"
     "sproject/infra/timeUtil"
-    "sproject/infra/typeUtil"
-    "fmt"
     "time"
 )
 
 const DEFAULT_CHAR_SET = "UTF-8"
 
 type EmailRegisterRequest struct {
-    OpenUDID string `json:"open_udid"`
     Email    string `json:"email"`
     Password string `json:"password"`
     Name     string `json:"name"`
@@ -59,33 +56,11 @@ func (s *Server) SendVerificationEmail(email string) error {
     if err != nil || len(token) == 0 {
         return errors.New("failed to generate a new token")
     }
-    template := s.Config.VerificationEmailTemplate
-    verifyEmail := &Email{
-        Destination: &Destination{ToAddresses:[]*string{&user.Email}},
-        Message: &Message{
-            Subject:&Content{
-                Charset:typeUtil.String(DEFAULT_CHAR_SET),
-                Data:typeUtil.String(template.Subject),
-            },
-            Body:&Body{
-                Html: &Content{
-                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
-                    Data:typeUtil.String(fmt.Sprintf(template.Body, token, token)),
-                },
-                // Ignore the text part
-                Text: &Content{
-                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
-                    Data:typeUtil.String(""),
-                },
-            },
-        },
-        Source: typeUtil.String(template.Source),
-    }
     client, err := s.CreateSESClient()
     if err != nil {
         return err
     }
-    return SendEmail(verifyEmail, client)
+    return SendEmail(user.Email, token, s.Config.VerificationEmailTemplate, client)
 }
 
 func (s *Server) VerifyEmailAddress(token string) error {

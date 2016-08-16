@@ -7,20 +7,26 @@ type Server struct {
 }
 
 type ServerConfig struct {
-    SES_ACCESS_KEY            string
-    SES_SECRET_KEY            string
-    SES_REGION                string
-    VerificationEmailTemplate VerificationEmailTemplate
+    PasswordSalt               string
+    SesConfig                  SesConfig
+    VerificationEmailTemplate  EmailTemplate
+    ResetPasswordEmailTemplate EmailTemplate
 }
 
-type VerificationEmailTemplate struct {
+type EmailTemplate struct {
     Subject string
     Body    string
     Source  string
 }
 
-func NewServer(storage Storage, config ServerConfig) Server {
-    return Server{
+type SesConfig struct {
+    SES_ACCESS_KEY string
+    SES_SECRET_KEY string
+    SES_REGION     string
+}
+
+func NewServer(storage Storage, config ServerConfig) *Server {
+    return &Server{
         Storage: storage,
         Config:  config,
     }

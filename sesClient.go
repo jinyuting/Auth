@@ -8,6 +8,7 @@ import (
     "fmt"
     "errors"
     "log"
+    "sproject/infra/typeUtil"
 )
 
 type Email struct {
@@ -42,7 +43,32 @@ type Content struct {
     Data    *string
 }
 
-func SendEmail(email *Email, sesClient SESClient) error {
+func SendEmail(token, emailAddress string, template EmailTemplate, client SESClient) error {
+    email := &Email{
+        Destination: &Destination{ToAddresses:[]*string{&emailAddress}},
+        Message: &Message{
+            Subject:&Content{
+                Charset:typeUtil.String(DEFAULT_CHAR_SET),
+                Data:typeUtil.String(template.Subject),
+            },
+            Body:&Body{
+                Html: &Content{
+                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
+                    Data:typeUtil.String(fmt.Sprintf(template.Body, token, token)),
+                },
+                // Ignore the text part
+                Text: &Content{
+                    Charset:typeUtil.String(DEFAULT_CHAR_SET),
+                    Data:typeUtil.String(""),
+                },
+            },
+        },
+        Source: typeUtil.String(template.Source),
+    }
+    return doSendEmail(email, client)
+}
+
+func doSendEmail(email *Email, sesClient SESClient) error {
     if email == nil || email.Destination == nil || email.Message == nil || email.Source == nil {
         return errors.New("invalidate parameter")
     }
@@ -97,10 +123,11 @@ type SESClient interface {
 }
 
 func (s *Server) CreateSESClient() (SESClient, error) {
-    if s.Config.SES_ACCESS_KEY == "" || s.Config.SES_SECRET_KEY == "" || s.Config.SES_REGION == "" {
-        return nil, errors.New(fmt.Sprintf("missing one or more conf: %v", s.Config))
+    config := s.Config.SesConfig
+    if config.SES_ACCESS_KEY == "" || config.SES_SECRET_KEY == "" || config.SES_REGION == "" {
+        return nil, errors.New(fmt.Sprintf("missing one or more conf: %v", config))
     }
     sesConfig := aws.NewConfig().WithCredentials(credentials.NewStaticCredentials(
-        s.Config.SES_ACCESS_KEY, s.Config.SES_SECRET_KEY, "")).WithRegion(s.Config.SES_REGION)
+        config.SES_ACCESS_KEY, config.SES_SECRET_KEY, "")).WithRegion(config.SES_REGION)
     return ses.New(session.New(), sesConfig), nil
 }

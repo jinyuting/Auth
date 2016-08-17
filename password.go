@@ -2,6 +2,7 @@ package auth
 
 import (
     "errors"
+    "time"
 )
 
 func (s *Server) SendResetPasswordEmail(emailAddress string) error {
@@ -30,6 +31,9 @@ func (s *Server) ResetPassword(token, password string) error {
     }
     if tokenObj == nil || tokenObj.Type != TOKEN_TYPE_RESET_PASSWORD {
         return errors.New("Invalid token")
+    }
+    if tokenObj.ExpiredAt < time.Now().Unix() {
+        return errors.New("Expired token")
     }
     // check user
     user, err := s.Storage.GetUser(tokenObj.UserId)

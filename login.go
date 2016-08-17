@@ -3,6 +3,7 @@ package auth
 import (
     "log"
     "errors"
+    "time"
 )
 
 type UserStatus int
@@ -88,4 +89,29 @@ func (s *Server) Logout(req *LogoutRequest) error {
         return errors.New("Invalid logout request")
     }
     return s.Storage.UnBindUserToOpenUDID(req.UserId, req.OpenUDID)
+}
+
+func (s *Server) VerifyToken(token string, tokenType TokenType) error {
+    tokenObj, err := s.Storage.GetToken(token)
+    if err != nil {
+        return err
+    }
+    if tokenObj == nil || tokenObj.Type != tokenType {
+        return errors.New("Invalid token")
+    }
+    if tokenObj.ExpiredAt < time.Now().Unix() {
+        return errors.New("Expired token")
+    }
+    // check user
+    user, err := s.Storage.GetUser(tokenObj.UserId)
+    if err != nil {
+        return err
+    }
+    if user == nil {
+        return errors.New("User not exists!")
+    }
+    if user.Status != USER_STATUS_NORMAL {
+        return errors.New("User status is not normal, cannot change passowrd")
+    }
+    return nil
 }

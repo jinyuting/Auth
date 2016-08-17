@@ -42,10 +42,10 @@ func (s *Server) RegisterByEmail(req *EmailRegisterRequest, needVerified ...bool
 	if err != nil {
 		return err
 	}
-	if needVerified != nil && len(needVerified) > 0 && needVerified[0] == true {
-		return s.SendVerificationEmail(user.Email)
+	if needVerified != nil && len(needVerified) > 0 && needVerified[0] == false {
+		return nil
 	}
-	return nil
+	return s.SendVerificationEmail(user.Email)
 }
 
 func (s *Server) SendVerificationEmail(email string) error {

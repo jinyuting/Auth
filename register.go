@@ -35,8 +35,12 @@ func (s *Server) RegisterByEmail(req *EmailRegisterRequest, needVerified ...bool
         log.Print(err)
         return err
     }
-    if err = s.CheckEmailRegistered(e.Address); err != nil {
+    registered, err := s.CheckEmailRegistered(e.Address)
+    if err != nil {
         return err
+    }
+    if registered {
+        return errors.New("The email already registered")
     }
     user, err := s.Storage.CreateUser(&User{Email: e.Address, Password: req.Password, Name: req.Name})
     if err != nil {

@@ -57,6 +57,9 @@ func (s *Server) SendVerificationEmail(email string) error {
     if err != nil {
         return err
     }
+    if user == nil {
+        return errors.New("Cannot find the user by email")
+    }
 
     token, err := s.Storage.NewToken(TOKEN_TYPE_VERIFY_EMAIL, s.Config.TokenExpire, user.Id)
     if err != nil || len(token) == 0 {

@@ -8,6 +8,10 @@ import (
 
 type UserStatus int
 
+func (s UserStatus) int() {
+    return int(s)
+}
+
 const (
     USER_STATUS_NOT_VERIFY UserStatus = 0
     USER_STATUS_NORMAL UserStatus = 1

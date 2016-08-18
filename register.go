@@ -21,9 +21,9 @@ func (s *Server) CheckEmailRegistered(email string) (bool, error) {
         return false, err
     }
     if user != nil {
-        return false, errors.New("The Email is already registered")
+        return true, nil
     }
-    return true, nil
+    return false, nil
 }
 
 func (s *Server) RegisterByEmail(req *EmailRegisterRequest, needVerified ...bool) error {

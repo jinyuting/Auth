@@ -21,7 +21,7 @@ func (s *Server) SendResetPasswordEmail(emailAddress string) error {
     if err != nil {
         return err
     }
-    return SendEmail(user.Email, token, s.Config.ResetPasswordEmailTemplate, client)
+    return SendEmail(token, user.Email, s.Config.ResetPasswordEmailTemplate, client)
 }
 
 func (s *Server) ResetPassword(token, password string) error {

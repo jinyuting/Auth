@@ -69,7 +69,7 @@ func (s *Server) SendVerificationEmail(email string) error {
     if err != nil {
         return err
     }
-    return SendEmail(user.Email, token, s.Config.VerificationEmailTemplate, client)
+    return SendEmail(token, user.Email, s.Config.VerificationEmailTemplate, client)
 }
 
 func (s *Server) VerifyEmailAddress(token string) error {

@@ -16,7 +16,12 @@ type EmailRegisterRequest struct {
 }
 
 func (s *Server) CheckEmailRegistered(email string) (bool, error) {
-    user, err := s.Storage.GetUserByEmail(email)
+    e, err := mail.ParseAddress(email)
+    if err != nil {
+        log.Print(err)
+        return false, err
+    }
+    user, err := s.Storage.GetUserByEmail(e.Address)
     if err != nil {
         return false, err
     }
@@ -53,7 +58,12 @@ func (s *Server) RegisterByEmail(req *EmailRegisterRequest, needVerified ...bool
 }
 
 func (s *Server) SendVerificationEmail(email string) error {
-    user, err := s.Storage.GetUserByEmail(email)
+    e, err := mail.ParseAddress(email)
+    if err != nil {
+        log.Print(err)
+        return err
+    }
+    user, err := s.Storage.GetUserByEmail(e.Address)
     if err != nil {
         return err
     }

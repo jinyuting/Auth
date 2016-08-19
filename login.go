@@ -25,6 +25,7 @@ type LoginRequest struct {
 type LoginResponse struct {
     UserId string `json:"user_id"`
     Email  string `json:"email"`
+    Name   string `json:"name"`
 }
 
 func (s *Server) Login(req *LoginRequest) (*LoginResponse, error) {
@@ -47,7 +48,7 @@ func (s *Server) Login(req *LoginRequest) (*LoginResponse, error) {
         return nil, err
     }
 
-    return &LoginResponse{UserId:user.Id, Email:user.Email}, nil
+    return &LoginResponse{UserId:user.Id, Email:user.Email, Name: user.Name}, nil
 }
 
 func (s *Server) EmailLogin(req *LoginRequest) (*LoginResponse, error) {
@@ -70,7 +71,7 @@ func (s *Server) EmailLogin(req *LoginRequest) (*LoginResponse, error) {
         return nil, err
     }
 
-    return &LoginResponse{UserId:user.Id, Email:user.Email}, nil
+    return &LoginResponse{UserId:user.Id, Email:user.Email, Name: user.Name}, nil
 }
 
 type LogoutRequest struct {

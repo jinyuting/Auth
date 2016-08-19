@@ -39,9 +39,6 @@ func (s *Server) Login(req *LoginRequest) (*LoginResponse, error) {
     if user == nil || user.Status == USER_STATUS_DELETED || user.Password != req.Password {
         return nil, errors.New("Invalid user or password")
     }
-    if user.Status == USER_STATUS_NOT_VERIFY {
-        return nil, errors.New("The user is not verified")
-    }
     if user.Status == USER_STATUS_LOCKED {
         return nil, errors.New("The user is locked")
     }
@@ -64,9 +61,6 @@ func (s *Server) EmailLogin(req *LoginRequest) (*LoginResponse, error) {
     }
     if user == nil || user.Status == USER_STATUS_DELETED || user.Password != req.Password {
         return nil, errors.New("Invalid user or password")
-    }
-    if user.Status == USER_STATUS_NOT_VERIFY {
-        return nil, errors.New("The user is not verified")
     }
     if user.Status == USER_STATUS_LOCKED {
         return nil, errors.New("The user is locked")

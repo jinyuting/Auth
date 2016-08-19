@@ -43,9 +43,9 @@ func (s *Server) ResetPassword(token, password string) error {
     if user == nil {
         return errors.New("User not exists!")
     }
-    if user.Status != USER_STATUS_NORMAL {
-        return errors.New("User status is not normal, cannot change passowrd")
-    }
+    //if user.Status != USER_STATUS_NORMAL {
+    //    return errors.New("User status is not normal, cannot change password")
+    //}
     user.Password = password
     return s.Storage.UpdateUser(user)
 }

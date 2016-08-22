@@ -3,10 +3,17 @@ package auth
 import (
     "errors"
     "time"
+    "net/mail"
+    log "github.com/cihub/seelog"
 )
 
-func (s *Server) SendResetPasswordEmail(emailAddress string) error {
-    user, err := s.Storage.GetUserByEmail(emailAddress)
+func (s *Server) SendResetPasswordEmail(emailAddress string, template *EmailTemplate) error {
+    e, err := mail.ParseAddress(emailAddress)
+    if err != nil {
+        log.Error(err)
+        return err
+    }
+    user, err := s.Storage.GetUserByEmail(e.Address)
     if err != nil {
         return err
     }
@@ -21,7 +28,7 @@ func (s *Server) SendResetPasswordEmail(emailAddress string) error {
     if err != nil {
         return err
     }
-    return SendEmail(token, user.Email, s.Config.ResetPasswordEmailTemplate, client)
+    return SendEmail(token, user.Email, template, client)
 }
 
 func (s *Server) ResetPassword(token, password string) error {

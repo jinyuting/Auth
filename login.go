@@ -1,9 +1,9 @@
 package auth
 
 import (
-    "log"
     "errors"
     "time"
+    log "github.com/cihub/seelog"
 )
 
 type UserStatus int
@@ -34,7 +34,7 @@ func (s *Server) Login(req *LoginRequest) (*LoginResponse, error) {
     }
     user, err := s.Storage.GetUser(req.UserId)
     if err != nil {
-        log.Print(err)
+        log.Error(err)
         return nil, err
     }
     if user == nil || user.Status == USER_STATUS_DELETED || user.Password != req.Password {
@@ -44,7 +44,7 @@ func (s *Server) Login(req *LoginRequest) (*LoginResponse, error) {
         return nil, errors.New("The user is locked")
     }
     if err = s.Storage.BindUserToOpenUDID(user.Id, req.OpenUDID); err != nil {
-        log.Printf("bind userId to openUDID failed. userId=%s, openUDID=%s, err= %s", user.Id, req.OpenUDID, err)
+        log.Errorf("bind userId to openUDID failed. userId=%s, openUDID=%s, err= %s", user.Id, req.OpenUDID, err)
         return nil, err
     }
 
@@ -57,7 +57,7 @@ func (s *Server) EmailLogin(req *LoginRequest) (*LoginResponse, error) {
     }
     user, err := s.Storage.GetUserByEmail(req.Email)
     if err != nil {
-        log.Print(err)
+        log.Error(err)
         return nil, err
     }
     if user == nil || user.Status == USER_STATUS_DELETED || user.Password != req.Password {
@@ -67,7 +67,7 @@ func (s *Server) EmailLogin(req *LoginRequest) (*LoginResponse, error) {
         return nil, errors.New("The user is locked")
     }
     if err = s.Storage.BindUserToOpenUDID(user.Id, req.OpenUDID); err != nil {
-        log.Printf("bind userId to openUDID failed. userId=%s, openUDID=%s, err= %s", user.Id, req.OpenUDID, err)
+        log.Errorf("bind userId to openUDID failed. userId=%s, openUDID=%s, err= %s", user.Id, req.OpenUDID, err)
         return nil, err
     }
 

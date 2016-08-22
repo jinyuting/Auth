@@ -1,0 +1,9 @@
+<seelog minlevel="debug" maxlevel="error">
+	<outputs formatid="common">
+		<console/>
+	</outputs>
+	<formats>
+		<format id="common" format="[%File:%Line] %Date/%Time [%LEV] %Msg%n"/>
+		<format id="critical" format="[%File:%Line] %Date/%Time %Msg%n"/>
+	</formats>
+</seelog>

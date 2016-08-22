@@ -7,7 +7,10 @@ import (
     "github.com/aws/aws-sdk-go/aws"
     "fmt"
     "errors"
-    "log"
+    "bytes"
+    "strings"
+    "html/template"
+    log "github.com/cihub/seelog"
 )
 
 type Email struct {
@@ -42,7 +45,12 @@ type Content struct {
     Data    *string
 }
 
-func SendEmail(token, emailAddress string, template EmailTemplate, client SESClient) error {
+func SendEmail(token, emailAddress string, template *EmailTemplate, client SESClient) error {
+    body, err := ParseHtmlMsgContent(template.Body, struct{ Token string }{Token: token})
+    if err != nil {
+        log.Errorf("Parse email body failed. err=%s", err)
+    }
+
     email := &Email{
         Destination: &Destination{ToAddresses:[]*string{&emailAddress}},
         Message: &Message{
@@ -53,7 +61,7 @@ func SendEmail(token, emailAddress string, template EmailTemplate, client SESCli
             Body:&Body{
                 Html: &Content{
                     Charset:String(DEFAULT_CHAR_SET),
-                    Data:String(fmt.Sprintf(template.Body, token, token)),
+                    Data:String(body),
                 },
                 // Ignore the text part
                 Text: &Content{
@@ -65,6 +73,16 @@ func SendEmail(token, emailAddress string, template EmailTemplate, client SESCli
         Source: String(template.Source),
     }
     return doSendEmail(email, client)
+}
+
+func ParseHtmlMsgContent(msg string, values interface{}) (string, error) {
+    msgTemp := template.Must(template.New("template id").Parse(msg))
+    out := bytes.NewBuffer(nil)
+    //将string与模板合成，变量token的内容会替换掉{{.token}}
+    if err := msgTemp.Execute(out, values); err != nil {
+        return "", err
+    }
+    return strings.TrimSpace(out.String()), nil
 }
 
 func doSendEmail(email *Email, sesClient SESClient) error {
@@ -110,10 +128,10 @@ func doSendEmail(email *Email, sesClient SESClient) error {
     }
     _, err := sesClient.SendEmail(input)
     if err != nil {
-        log.Printf("send email failed. err=%s", err)
+        log.Errorf("send email failed. err=%s", err)
         return err
     }
-    log.Printf("Send email successfully,email=>%v", email)
+    log.Debugf("Send email successfully,email=>%v", email)
     return nil
 }
 

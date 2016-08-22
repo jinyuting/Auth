@@ -2,9 +2,9 @@ package auth
 
 import (
     "errors"
-    "log"
     "net/mail"
     "time"
+    log "github.com/cihub/seelog"
 )
 
 const DEFAULT_CHAR_SET = "UTF-8"
@@ -18,7 +18,7 @@ type EmailRegisterRequest struct {
 func (s *Server) CheckEmailRegistered(email string) (bool, error) {
     e, err := mail.ParseAddress(email)
     if err != nil {
-        log.Print(err)
+        log.Error(err)
         return false, err
     }
     user, err := s.Storage.GetUserByEmail(e.Address)
@@ -31,13 +31,13 @@ func (s *Server) CheckEmailRegistered(email string) (bool, error) {
     return false, nil
 }
 
-func (s *Server) RegisterByEmail(req *EmailRegisterRequest, needVerified ...bool) error {
+func (s *Server) RegisterByEmail(req *EmailRegisterRequest) error {
     if len(req.Email) == 0 || len(req.Password) == 0 {
         return errors.New("invalid email or password")
     }
     e, err := mail.ParseAddress(req.Email)
     if err != nil {
-        log.Print(err)
+        log.Error(err)
         return err
     }
     registered, err := s.CheckEmailRegistered(e.Address)
@@ -47,20 +47,17 @@ func (s *Server) RegisterByEmail(req *EmailRegisterRequest, needVerified ...bool
     if registered {
         return errors.New("The email already registered")
     }
-    user, err := s.Storage.CreateUser(&User{Email: e.Address, Password: req.Password, Name: req.Name})
+    _, err = s.Storage.CreateUser(&User{Email: e.Address, Password: req.Password, Name: req.Name})
     if err != nil {
         return err
     }
-    if needVerified != nil && len(needVerified) > 0 && needVerified[0] == false {
-        return nil
-    }
-    return s.SendVerificationEmail(user.Email)
+    return nil
 }
 
-func (s *Server) SendVerificationEmail(email string) error {
+func (s *Server) SendVerificationEmail(email string, template *EmailTemplate) error {
     e, err := mail.ParseAddress(email)
     if err != nil {
-        log.Print(err)
+        log.Error(err)
         return err
     }
     user, err := s.Storage.GetUserByEmail(e.Address)
@@ -79,7 +76,7 @@ func (s *Server) SendVerificationEmail(email string) error {
     if err != nil {
         return err
     }
-    return SendEmail(token, user.Email, s.Config.VerificationEmailTemplate, client)
+    return SendEmail(token, user.Email, template, client)
 }
 
 func (s *Server) VerifyEmailAddress(token string) error {

@@ -10,8 +10,6 @@ type ServerConfig struct {
     PasswordSalt               string
     TokenExpire                int64
     SesConfig                  SesConfig
-    VerificationEmailTemplate  EmailTemplate
-    ResetPasswordEmailTemplate EmailTemplate
 }
 
 type EmailTemplate struct {

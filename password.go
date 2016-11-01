@@ -54,5 +54,8 @@ func (s *Server) ResetPassword(token, password string) error {
     //    return errors.New("User status is not normal, cannot change password")
     //}
     user.Password = password
-    return s.Storage.UpdateUser(user)
+    if err = s.Storage.UpdateUser(user); err == nil {
+        err = s.Storage.ExpireToken(token)
+    }
+    return err
 }
